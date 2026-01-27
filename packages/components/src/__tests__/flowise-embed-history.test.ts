@@ -3,24 +3,26 @@ import fs from 'fs'
 const readText = (filePath: string) => fs.readFileSync(filePath, 'utf8')
 
 describe('flowise-embed includeHistory integration', () => {
-    test('web.js bundle references includeHistory and public-chatmessage', () => {
+    test('web.js bundle references includeHistory, public-chatmessage, and public-executions', () => {
         const webJsPath = require.resolve('flowise-embed/dist/web.js')
         const contents = readText(webJsPath)
 
         expect(contents).toContain('includeHistory')
         expect(contents).toContain('usePolling')
         expect(contents).toContain('public-chatmessage')
+        expect(contents).toContain('public-executions/by-session')
         expect(contents).toContain('sessionId=')
         expect(contents).toContain('chatId=')
     })
 
-    test('web.umd.js bundle references includeHistory and public-chatmessage', () => {
+    test('web.umd.js bundle references includeHistory, public-chatmessage, and public-executions', () => {
         const webUmdPath = require.resolve('flowise-embed/dist/web.umd.js')
         const contents = readText(webUmdPath)
 
         expect(contents).toContain('includeHistory')
         expect(contents).toContain('usePolling')
         expect(contents).toContain('public-chatmessage')
+        expect(contents).toContain('public-executions/by-session')
         expect(contents).toContain('sessionId=')
         expect(contents).toContain('chatId=')
     })
