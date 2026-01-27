@@ -55,6 +55,20 @@ describe('flowise-embed includeHistory integration', () => {
         expect(contents).toContain('_EXTERNAL_')
     })
 
+    test('web.js bundle defaults usePolling to true', () => {
+        const webJsPath = require.resolve('flowise-embed/dist/web.js')
+        const contents = readText(webJsPath)
+
+        expect(contents).toContain('usePolling:!0')
+    })
+
+    test('web.umd.js bundle defaults usePolling to true', () => {
+        const webUmdPath = require.resolve('flowise-embed/dist/web.umd.js')
+        const contents = readText(webUmdPath)
+
+        expect(contents).toContain('usePolling:!0')
+    })
+
     test('type definitions expose includeHistory on Chatbot init', () => {
         const webDtsPath = require.resolve('flowise-embed/dist/web.d.ts')
         const windowDtsPath = require.resolve('flowise-embed/dist/window.d.ts')
