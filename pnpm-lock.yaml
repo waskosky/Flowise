@@ -34,7 +34,7 @@ overrides:
 
 patchedDependencies:
   flowise-embed@3.0.5:
-    hash: dq7jjldcgbk5toaoihrctn27cu
+    hash: gzeqxcgjt64xsfksctpgw3tkzi
     path: patches/flowise-embed@3.0.5.patch
 
 importers:
@@ -1072,10 +1072,10 @@ importers:
         version: 16.4.5
       flowise-embed:
         specifier: latest
-        version: 3.0.5(patch_hash=dq7jjldcgbk5toaoihrctn27cu)
+        version: 3.0.5(patch_hash=gzeqxcgjt64xsfksctpgw3tkzi)
       flowise-embed-react:
         specifier: latest
-        version: 3.0.5(@types/node@22.16.3)(flowise-embed@3.0.5(patch_hash=dq7jjldcgbk5toaoihrctn27cu))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.71.1)(terser@5.29.1)(typescript@5.5.2)
+        version: 3.0.5(@types/node@22.16.3)(flowise-embed@3.0.5(patch_hash=gzeqxcgjt64xsfksctpgw3tkzi))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.71.1)(terser@5.29.1)(typescript@5.5.2)
       flowise-react-json-view:
         specifier: '*'
         version: 1.21.7(@types/react@18.2.65)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -32398,10 +32398,10 @@ snapshots:
 
   flatted@3.3.1: {}
 
-  flowise-embed-react@3.0.5(@types/node@22.16.3)(flowise-embed@3.0.5(patch_hash=dq7jjldcgbk5toaoihrctn27cu))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.71.1)(terser@5.29.1)(typescript@5.5.2):
+  flowise-embed-react@3.0.5(@types/node@22.16.3)(flowise-embed@3.0.5(patch_hash=gzeqxcgjt64xsfksctpgw3tkzi))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.71.1)(terser@5.29.1)(typescript@5.5.2):
     dependencies:
       '@ladle/react': 2.5.1(@types/node@22.16.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.71.1)(terser@5.29.1)(typescript@5.5.2)
-      flowise-embed: 3.0.5(patch_hash=dq7jjldcgbk5toaoihrctn27cu)
+      flowise-embed: 3.0.5(patch_hash=gzeqxcgjt64xsfksctpgw3tkzi)
       react: 18.2.0
     transitivePeerDependencies:
       - '@types/node'
@@ -32415,7 +32415,7 @@ snapshots:
       - terser
       - typescript
 
-  flowise-embed@3.0.5(patch_hash=dq7jjldcgbk5toaoihrctn27cu):
+  flowise-embed@3.0.5(patch_hash=gzeqxcgjt64xsfksctpgw3tkzi):
     dependencies:
       '@babel/core': 7.24.0
       '@microsoft/fetch-event-source': 2.0.1

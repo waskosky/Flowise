@@ -3,7 +3,6 @@ import { getRunningExpressApp } from '../src/utils/getRunningExpressApp'
 import { organizationUserRouteTest } from './routes/v1/organization-user.route.test'
 import { predictionsRouteTest } from './routes/v1/predictions.route.test'
 import { publicChatmessageRouteTest } from './routes/v1/public-chatmessage.route.test'
-import { publicExecutionsRouteTest } from './routes/v1/public-executions.route.test'
 import { userRouteTest } from './routes/v1/user.route.test'
 import { apiKeyTest } from './utils/api-key.util.test'
 
@@ -26,7 +25,6 @@ describe('Routes Test', () => {
     organizationUserRouteTest()
     predictionsRouteTest()
     publicChatmessageRouteTest()
-    publicExecutionsRouteTest()
 })
 
 describe('Utils Test', () => {

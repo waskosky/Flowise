@@ -5,7 +5,6 @@ const router = express.Router()
 // CREATE
 
 // READ
-router.get('/by-session', executionController.getPublicExecutionBySession)
 router.get(['/', '/:id'], executionController.getPublicExecutionById)
 
 // UPDATE

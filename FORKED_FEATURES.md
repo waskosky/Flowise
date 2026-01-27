@@ -10,18 +10,12 @@ This document tracks changes and additions made in this fork relative to upstrea
   - New embed config option: `usePolling?: boolean`.
   - Default embed config sets `usePolling` to `true` for both web.js and web.umd.js bundles.
   - When enabled, the widget posts `async: true`, then polls `/api/v1/public-chatmessage/:chatflowid` using the existing `sessionId` or `chatId`.
-  - If a `sessionId` is available, the widget also polls `/api/v1/public-executions/by-session` to surface agentflow progress data during the async run.
-  - Agentflow progress is injected into an `apiMessage` placeholder when the final response has not been saved yet.
   - UI history is updated on each poll and stored to the same external local storage key, preserving session continuity.
   - Implemented in `node_modules/flowise-embed/dist/web.js` and `node_modules/flowise-embed/dist/web.umd.js`.
   - Typings updated in `node_modules/flowise-embed/dist/web.d.ts`, `node_modules/flowise-embed/dist/window.d.ts`, and `node_modules/flowise-embed/dist/components/Bot.d.ts`.
   - Patch files updated so `pnpm` patchedDependencies keep these changes:
     - `patches/flowise-embed.patch`
     - `patches/flowise-embed@3.0.5.patch`
-- Public execution polling endpoint for agentflow progress.
-  - New route: `/api/v1/public-executions/by-session?chatflowId=...&sessionId=...`.
-  - Mirrors public chat history rules (chatHistory enabled + allowed origins).
-  - Implemented in `packages/server/src/controllers/executions/index.ts`, `packages/server/src/services/executions/index.ts`, and `packages/server/src/routes/public-executions/index.ts`.
 
 ## Tests added for forked behavior
 - Async prediction route test ensures `202` + `chatId`/`sessionId` response:
@@ -31,9 +25,6 @@ This document tracks changes and additions made in this fork relative to upstrea
   - `packages/components/src/__tests__/flowise-embed-history.test.ts`
 - Custom MCP bundle test ensures `$flow` substitutions are compiled into the dist artifact:
   - `packages/components/src/__tests__/custom-mcp-flow-vars.test.ts`
-- Public execution polling route coverage:
-  - `packages/server/test/routes/v1/public-executions.route.test.ts`
-  - Registered in `packages/server/test/index.test.ts`
 
 ## Agentflow Custom MCP supports $flow variables in config
 - MCP server config templating now supports `{{ $flow.* }}` in addition to `{{ $vars.* }}`.

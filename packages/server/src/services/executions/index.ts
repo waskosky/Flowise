@@ -63,42 +63,6 @@ const getPublicExecutionById = async (executionId: string): Promise<Execution | 
     }
 }
 
-const getPublicExecutionBySession = async (agentflowId: string, sessionId: string): Promise<Execution | null> => {
-    try {
-        const appServer = getRunningExpressApp()
-        const executionRepository = appServer.AppDataSource.getRepository(Execution)
-
-        const res = await executionRepository
-            .createQueryBuilder('execution')
-            .where('execution.agentflowId = :agentflowId', { agentflowId })
-            .andWhere('execution.sessionId = :sessionId', { sessionId })
-            .orderBy('execution.createdDate', 'DESC')
-            .getOne()
-
-        if (!res) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Execution for session ${sessionId} not found`)
-        }
-
-        let executionData: any = res.executionData
-        if (typeof executionData === 'string') {
-            try {
-                executionData = JSON.parse(executionData)
-            } catch (error) {
-                return res
-            }
-        }
-
-        const executionDataWithoutCredentialId = _removeCredentialId(executionData)
-        const stringifiedExecutionData = JSON.stringify(executionDataWithoutCredentialId)
-        return { ...res, executionData: stringifiedExecutionData }
-    } catch (error) {
-        throw new InternalFlowiseError(
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            `Error: executionsService.getPublicExecutionBySession - ${getErrorMessage(error)}`
-        )
-    }
-}
-
 const getAllExecutions = async (filters: ExecutionFilters = {}): Promise<{ data: Execution[]; total: number }> => {
     try {
         const appServer = getRunningExpressApp()
@@ -204,6 +168,5 @@ export default {
     getAllExecutions,
     deleteExecutions,
     getPublicExecutionById,
-    getPublicExecutionBySession,
     updateExecution
 }
