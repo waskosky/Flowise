@@ -8,7 +8,6 @@ This document tracks changes and additions made in this fork relative to upstrea
   - Request shape includes `async: true`; server ensures `chatId` is set and disables streaming for async requests.
 - Embed client can poll for updates instead of holding long-lived requests.
   - New embed config option: `usePolling?: boolean`.
-  - Default embed config sets `usePolling` to `true` for both web.js and web.umd.js bundles.
   - When enabled, the widget posts `async: true`, then polls `/api/v1/public-chatmessage/:chatflowid` using the existing `sessionId` or `chatId`.
   - UI history is updated on each poll and stored to the same external local storage key, preserving session continuity.
   - Implemented in `node_modules/flowise-embed/dist/web.js` and `node_modules/flowise-embed/dist/web.umd.js`.
