@@ -321,18 +321,18 @@
         },
         {
             "name": "azureChatOpenAI",
-            "models": [
-                {
-                    "label": "gpt-oss-120b",
-                    "name": "gpt-oss-120b",
-                    "input_cost": 0,
-                    "output_cost": 0
-                },
-                {
-                    "label": "gpt-5.2",
-                    "name": "gpt-5.2",
-                    "input_cost": 0.00000175,
-                    "output_cost": 0.000014
+                "models": [
+                    {
+                        "label": "gpt-oss-120b",
+                        "name": "gpt-oss-120b",
+                        "input_cost": 0,
+                        "output_cost": 0
+                    },
+                    {
+                        "label": "gpt-5.2",
+                        "name": "gpt-5.2",
+                        "input_cost": 0.00000175,
+                        "output_cost": 0.000014
                 },
                 {
                     "label": "gpt-5.2-pro",
@@ -1057,14 +1057,37 @@
             "name": "chatCohere",
             "models": [
                 {
-                    "label": "command-a",
-                    "name": "command-a",
+                    "label": "command-a-03-2025",
+                    "name": "command-a-03-2025",
+                    "description": "Command A – most performant; tool use, RAG, multilingual",
                     "input_cost": 0.0025,
                     "output_cost": 0.01
                 },
                 {
-                    "label": "command-r-plus",
-                    "name": "command-r-plus",
+                    "label": "command-r7b-12-2024",
+                    "name": "command-r7b-12-2024",
+                    "description": "Small, fast; RAG, tool use, agents",
+                    "input_cost": 0.000037,
+                    "output_cost": 0.00015
+                },
+                {
+                    "label": "command-a-reasoning-08-2025",
+                    "name": "command-a-reasoning-08-2025",
+                    "description": "Command A Reasoning – nuanced problem-solving, agents",
+                    "input_cost": 0.0025,
+                    "output_cost": 0.01
+                },
+                {
+                    "label": "command-r-08-2024",
+                    "name": "command-r-08-2024",
+                    "description": "Command R – RAG, tool use, multilingual",
+                    "input_cost": 0.00015,
+                    "output_cost": 0.0006
+                },
+                {
+                    "label": "command-r-plus-08-2024",
+                    "name": "command-r-plus-08-2024",
+                    "description": "Command R+ – complex RAG, multi-step tool use",
                     "input_cost": 0.0025,
                     "output_cost": 0.01
                 }
@@ -2179,16 +2202,8 @@
             "name": "googleGenerativeAiEmbeddings",
             "models": [
                 {
-                    "label": "embedding-001",
-                    "name": "embedding-001"
-                },
-                {
-                    "label": "text-embedding-004",
-                    "name": "text-embedding-004"
-                },
-                {
-                    "label": "gemini-embedding-exp-03-07",
-                    "name": "gemini-embedding-exp-03-07"
+                    "label": "gemini-embedding-001",
+                    "name": "gemini-embedding-001"
                 }
             ]
         },

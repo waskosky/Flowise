@@ -110,3 +110,12 @@ docker/docker-compose.dev2.yml
 /packages/components/nodes/agentflow/CustomFunction2
 /docker/models
 /docker
+
+# =============================================================================
+# Proprietary paths (should never exist in OSS)
+# =============================================================================
+extensions/
+
+# Only allow apps/oss-app, ignore all other apps
+apps/*/
+!apps/oss-app/
