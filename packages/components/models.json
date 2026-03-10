@@ -323,6 +323,12 @@
             "name": "azureChatOpenAI",
                 "models": [
                     {
+                        "label": "model-router",
+                        "name": "model-router",
+                        "input_cost": 0,
+                        "output_cost": 0
+                    },
+                    {
                         "label": "gpt-oss-120b",
                         "name": "gpt-oss-120b",
                         "input_cost": 0,
