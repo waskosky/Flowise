@@ -36,6 +36,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { jsonSchemaToGeminiParameters, schemaToGenerativeAIParameters } from './zod_to_genai_parameters.js'
 import { GoogleGenerativeAIToolType } from './types.js'
 
+const GEMINI_FUNCTION_CALL_PARTS_KEY = 'geminiFunctionCallParts'
+
 export function getMessageAuthor(message: BaseMessage) {
     const type = message._getType()
     if (ChatMessage.isInstance(message)) {
@@ -96,6 +98,21 @@ function messageContentMedia(content: MessageContentComplex): Part {
     }
 
     throw new Error('Invalid media content')
+}
+
+function getGeminiFunctionCallParts(parts?: Part[]): FunctionCallPart[] {
+    if (!Array.isArray(parts)) return []
+
+    return parts.filter((part): part is FunctionCallPart => 'functionCall' in part)
+}
+
+function getStoredGeminiFunctionCallParts(message: BaseMessage): FunctionCallPart[] {
+    if (!isAIMessage(message)) return []
+
+    const parts = message.additional_kwargs?.[GEMINI_FUNCTION_CALL_PARTS_KEY]
+    if (!Array.isArray(parts)) return []
+
+    return parts.filter((part): part is FunctionCallPart => typeof part === 'object' && part !== null && 'functionCall' in part)
 }
 
 function inferToolNameFromPreviousMessages(message: ToolMessage | ToolMessageChunk, previousMessages: BaseMessage[]): string | undefined {
@@ -362,15 +379,20 @@ export function convertMessageContentToParts(message: BaseMessage, isMultimodalM
         )
     }
 
-    if (isAIMessage(message) && message.tool_calls?.length) {
-        functionCalls = message.tool_calls.map((tc) => {
-            return {
-                functionCall: {
-                    name: tc.name,
-                    args: tc.args
+    if (isAIMessage(message)) {
+        const storedFunctionCalls = getStoredGeminiFunctionCallParts(message)
+        if (storedFunctionCalls.length) {
+            functionCalls = storedFunctionCalls
+        } else if (message.tool_calls?.length) {
+            functionCalls = message.tool_calls.map((tc) => {
+                return {
+                    functionCall: {
+                        name: tc.name,
+                        args: tc.args
+                    }
                 }
-            }
-        })
+            })
+        }
     }
 
     return [...messageParts, ...functionCalls]
@@ -451,6 +473,7 @@ export function mapGenerateContentResultToChatResult(
     const functionCalls = response.functionCalls()
     const [candidate] = response.candidates
     const { content: candidateContent, ...generationInfo } = candidate
+    const rawFunctionCallParts = getGeminiFunctionCallParts(candidateContent?.parts)
     let content: MessageContent | undefined
     const inlineDataItems: any[] = []
 
@@ -519,7 +542,8 @@ export function mapGenerateContentResultToChatResult(
                 }
             }),
             additional_kwargs: {
-                ...generationInfo
+                ...generationInfo,
+                ...(rawFunctionCallParts.length ? { [GEMINI_FUNCTION_CALL_PARTS_KEY]: rawFunctionCallParts } : {})
             },
             usage_metadata: extra?.usageMetadata,
             response_metadata: Object.keys(response_metadata).length > 0 ? response_metadata : undefined
@@ -552,6 +576,7 @@ export function convertResponseContentToChatGenerationChunk(
     const functionCalls = response.functionCalls()
     const [candidate] = response.candidates
     const { content: candidateContent, ...generationInfo } = candidate
+    const rawFunctionCallParts = getGeminiFunctionCallParts(candidateContent?.parts)
     let content: MessageContent | undefined
     const inlineDataItems: any[] = []
 
@@ -630,7 +655,7 @@ export function convertResponseContentToChatGenerationChunk(
             tool_call_chunks: toolCallChunks,
             // Each chunk can have unique "generationInfo", and merging strategy is unclear,
             // so leave blank for now.
-            additional_kwargs: {},
+            additional_kwargs: rawFunctionCallParts.length ? { [GEMINI_FUNCTION_CALL_PARTS_KEY]: rawFunctionCallParts } : {},
             usage_metadata: extra.usageMetadata,
             response_metadata: Object.keys(response_metadata).length > 0 ? response_metadata : undefined
         }),

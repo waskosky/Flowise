@@ -2061,7 +2061,9 @@ class Agent_Agentflow implements INode {
             role: 'assistant',
             content: response.content,
             tool_calls: response.tool_calls,
-            usage_metadata: response.usage_metadata
+            usage_metadata: response.usage_metadata,
+            additional_kwargs: response.additional_kwargs,
+            response_metadata: response.response_metadata
         })
 
         // Process each tool call
@@ -2387,7 +2389,9 @@ class Agent_Agentflow implements INode {
             role: 'assistant',
             content: response.content,
             tool_calls: response.tool_calls,
-            usage_metadata: response.usage_metadata
+            usage_metadata: response.usage_metadata,
+            additional_kwargs: response.additional_kwargs,
+            response_metadata: response.response_metadata
         })
 
         // Process each tool call
