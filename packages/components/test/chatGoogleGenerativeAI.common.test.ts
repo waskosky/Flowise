@@ -4,6 +4,7 @@ import {
     convertResponseContentToChatGenerationChunk,
     mapGenerateContentResultToChatResult
 } from '../nodes/chatmodels/ChatGoogleGenerativeAI/utils/common'
+import { convertToolsToGenAI } from '../nodes/chatmodels/ChatGoogleGenerativeAI/utils/tools'
 
 const GEMINI_FUNCTION_CALL_PARTS_KEY = 'geminiFunctionCallParts'
 
@@ -115,5 +116,55 @@ describe('ChatGoogleGenerativeAI function call round-trip', () => {
         )
 
         expect(chunk?.message.additional_kwargs[GEMINI_FUNCTION_CALL_PARTS_KEY]).toEqual([functionCallPart])
+    })
+
+    it('reuses raw Gemini server-side tool parts when rebuilding message parts', () => {
+        const toolCallPart = {
+            toolCall: {
+                toolType: 'google_search',
+                id: 'tool-call-1'
+            }
+        }
+        const toolResponsePart = {
+            toolResponse: {
+                toolType: 'google_search',
+                id: 'tool-call-1'
+            }
+        }
+
+        const message = new AIMessage({
+            content: [
+                {
+                    type: 'text',
+                    text: 'Searching the web first.'
+                },
+                toolCallPart as any,
+                toolResponsePart as any
+            ]
+        })
+
+        expect(convertMessageContentToParts(message, true, [])).toEqual([
+            { text: 'Searching the web first.' },
+            toolCallPart,
+            toolResponsePart
+        ])
+    })
+})
+
+describe('ChatGoogleGenerativeAI tool configuration', () => {
+    it('enables server-side tool invocations when built-in Gemini tools are combined with custom functions', () => {
+        const { toolConfig } = convertToolsToGenAI([
+            { googleSearch: {} } as any,
+            {
+                functionDeclarations: [
+                    {
+                        name: 'getWeather',
+                        description: 'Get the weather for a location'
+                    }
+                ]
+            } as any
+        ])
+
+        expect((toolConfig as any)?.includeServerSideToolInvocations).toBe(true)
     })
 })

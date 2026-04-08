@@ -320,6 +320,9 @@ function _convertLangChainContentToPart(content: MessageContentComplex, isMultim
     } else if ('functionCall' in content) {
         // No action needed here — function calls will be added later from message.tool_calls
         return undefined
+    } else if ('toolCall' in content || 'toolResponse' in content || 'thoughtSignature' in content) {
+        // Preserve raw Gemini server-side tool context parts for mixed built-in/custom tool flows.
+        return content as unknown as Part
     } else {
         if ('type' in content) {
             throw new Error(`Unknown content type ${content.type}`)

@@ -14,6 +14,10 @@ import { convertToGenerativeAITools } from './common.js'
 import { GoogleGenerativeAIToolType } from './types.js'
 import { removeAdditionalProperties } from './zod_to_genai_parameters.js'
 
+type FlowiseGoogleGenerativeAIToolConfig = Partial<ToolConfig> & {
+    includeServerSideToolInvocations?: boolean
+}
+
 export function convertToolsToGenAI(
     tools: GoogleGenerativeAIToolType[],
     extra?: {
@@ -22,7 +26,7 @@ export function convertToolsToGenAI(
     }
 ): {
     tools: GenerativeAITool[]
-    toolConfig?: ToolConfig
+    toolConfig?: FlowiseGoogleGenerativeAIToolConfig
 } {
     // Extract function declaration processing to a separate function
     const genAITools = processTools(tools)
@@ -100,10 +104,11 @@ function createToolConfig(
         toolChoice?: ToolChoice
         allowedFunctionNames?: string[]
     }
-): ToolConfig | undefined {
-    if (!genAITools.length || !extra) return undefined
+): FlowiseGoogleGenerativeAIToolConfig | undefined {
+    if (!genAITools.length) return undefined
 
-    const { toolChoice, allowedFunctionNames } = extra
+    const { toolChoice, allowedFunctionNames } = extra ?? {}
+    const includeServerSideToolInvocations = shouldIncludeServerSideToolInvocations(genAITools)
 
     const modeMap: Record<string, FunctionCallingMode> = {
         any: FunctionCallingMode.ANY,
@@ -111,26 +116,35 @@ function createToolConfig(
         none: FunctionCallingMode.NONE
     }
 
+    let functionCallingConfig: ToolConfig['functionCallingConfig'] | undefined
+
     if (toolChoice && ['any', 'auto', 'none'].includes(toolChoice as string)) {
-        return {
-            functionCallingConfig: {
-                mode: modeMap[toolChoice as keyof typeof modeMap] ?? 'MODE_UNSPECIFIED',
-                allowedFunctionNames
-            }
+        functionCallingConfig = {
+            mode: modeMap[toolChoice as keyof typeof modeMap] ?? 'MODE_UNSPECIFIED',
+            allowedFunctionNames
+        }
+    } else if (typeof toolChoice === 'string' || allowedFunctionNames) {
+        functionCallingConfig = {
+            mode: FunctionCallingMode.ANY,
+            allowedFunctionNames: [...(allowedFunctionNames ?? []), ...(toolChoice && typeof toolChoice === 'string' ? [toolChoice] : [])]
         }
     }
 
-    if (typeof toolChoice === 'string' || allowedFunctionNames) {
-        return {
-            functionCallingConfig: {
-                mode: FunctionCallingMode.ANY,
-                allowedFunctionNames: [
-                    ...(allowedFunctionNames ?? []),
-                    ...(toolChoice && typeof toolChoice === 'string' ? [toolChoice] : [])
-                ]
-            }
-        }
+    if (!functionCallingConfig && !includeServerSideToolInvocations) {
+        return undefined
     }
 
-    return undefined
+    return {
+        ...(functionCallingConfig ? { functionCallingConfig } : {}),
+        ...(includeServerSideToolInvocations ? { includeServerSideToolInvocations: true } : {})
+    }
+}
+
+function shouldIncludeServerSideToolInvocations(genAITools: GenerativeAITool[]): boolean {
+    const hasFunctionDeclarations = genAITools.some(
+        (tool): tool is FunctionDeclarationsTool => 'functionDeclarations' in tool && Array.isArray(tool.functionDeclarations)
+    )
+    const hasBuiltInTools = genAITools.some((tool) => !('functionDeclarations' in tool && Array.isArray(tool.functionDeclarations)))
+
+    return hasFunctionDeclarations && hasBuiltInTools
 }

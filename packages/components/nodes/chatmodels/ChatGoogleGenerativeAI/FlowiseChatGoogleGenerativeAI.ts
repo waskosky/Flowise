@@ -775,7 +775,7 @@ export class LangchainChatGoogleGenerativeAI
 
         return {
             ...(toolsAndConfig?.tools ? { tools: toolsAndConfig.tools } : {}),
-            ...(toolsAndConfig?.toolConfig ? { toolConfig: toolsAndConfig.toolConfig } : {})
+            ...(toolsAndConfig?.toolConfig ? { toolConfig: toolsAndConfig.toolConfig as GenerateContentRequest['toolConfig'] } : {})
         }
     }
 
