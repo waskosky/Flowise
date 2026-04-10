@@ -59,7 +59,7 @@ import {
     constructGraphs,
     getAPIOverrideConfig
 } from '../utils'
-import { validateFileMimeTypeAndExtensionMatch } from './fileValidation'
+import { normalizeAttachmentUploadMimeType, validateFileMimeTypeAndExtensionMatch } from './fileValidation'
 import { validateFlowAPIKey } from './validateKey'
 import logger from './logger'
 import { utilAddChatMessage } from './addChatMesage'
@@ -355,12 +355,14 @@ export const executeFlow = async ({
                 const splitDataURI = upload.data.split(',')
                 const bf = Buffer.from(splitDataURI.pop() || '', 'base64')
                 const mime = splitDataURI[0].split(':')[1].split(';')[0]
+                const normalizedMime = normalizeAttachmentUploadMimeType(filename, mime)
 
                 // Validate file extension, MIME type, and content to prevent security vulnerabilities
-                validateFileMimeTypeAndExtensionMatch(filename, mime)
+                validateFileMimeTypeAndExtensionMatch(filename, normalizedMime)
 
-                const { totalSize } = await addSingleFileToStorage(mime, bf, filename, orgId, chatflowid, chatId)
+                const { totalSize } = await addSingleFileToStorage(normalizedMime, bf, filename, orgId, chatflowid, chatId)
                 await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
+                upload.mime = normalizedMime
                 upload.type = 'stored-file'
                 // Omit upload.data since we don't store the content in database
                 fileUploads[i] = omit(upload, ['data'])
@@ -423,12 +425,13 @@ export const executeFlow = async ({
             const fileBuffer = await getFileFromUpload(file.path ?? file.key)
             // Address file name with special characters: https://github.com/expressjs/multer/issues/1104
             file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
+            const normalizedMimeType = normalizeAttachmentUploadMimeType(file.originalname, file.mimetype)
 
             // Validate file extension, MIME type, and content to prevent security vulnerabilities
-            validateFileMimeTypeAndExtensionMatch(file.originalname, file.mimetype)
+            validateFileMimeTypeAndExtensionMatch(file.originalname, normalizedMimeType)
 
             const { path: storagePath, totalSize } = await addArrayFilesToStorage(
-                file.mimetype,
+                normalizedMimeType,
                 fileBuffer,
                 file.originalname,
                 fileNames,
@@ -437,7 +440,7 @@ export const executeFlow = async ({
             )
             await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
 
-            const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
+            const fileInputFieldFromMimeType = mapMimeTypeToInputField(normalizedMimeType)
 
             const fileExtension = path.extname(file.originalname)
 

@@ -2,6 +2,7 @@ import { filterAllowedUploadMimeTypes, validateMimeTypeAndExtensionMatch } from 
 import { InternalFlowiseError } from '../errors/internalFlowiseError'
 import { StatusCodes } from 'http-status-codes'
 import { getErrorMessage } from '../errors/utils'
+import { normalizeAttachmentUploadMimeType } from './uploadMimeType'
 
 /**
  * Validates that file extension matches the declared MIME type with standardized error handling
@@ -20,11 +21,13 @@ import { getErrorMessage } from '../errors/utils'
  */
 export function validateFileMimeTypeAndExtensionMatch(filename: string, mimetype: string): void {
     try {
-        validateMimeTypeAndExtensionMatch(filename, mimetype)
+        validateMimeTypeAndExtensionMatch(filename, normalizeAttachmentUploadMimeType(filename, mimetype))
     } catch (error) {
         throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, getErrorMessage(error))
     }
 }
+
+export { normalizeAttachmentUploadMimeType }
 
 /**
  * Sanitizes the allowedUploadFileTypes string from chatbotConfig by keeping only

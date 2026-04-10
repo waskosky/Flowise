@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express'
+import { StatusCodes } from 'http-status-codes'
 import executionsService from '../../services/executions'
 import { ExecutionState } from '../../Interface'
+import { ChatFlow } from '../../database/entities/ChatFlow'
+import { InternalFlowiseError } from '../../errors/internalFlowiseError'
+import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 
 const getExecutionById = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -18,6 +22,73 @@ const getPublicExecutionById = async (req: Request, res: Response, next: NextFun
         const executionId = req.params.id
         const execution = await executionsService.getPublicExecutionById(executionId)
         return res.json(execution)
+    } catch (error) {
+        next(error)
+    }
+}
+
+const getPublicExecutionStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (typeof req.params === 'undefined' || !req.params.id) {
+            throw new InternalFlowiseError(
+                StatusCodes.PRECONDITION_FAILED,
+                'Error: executionsController.getPublicExecutionStatus - id not provided!'
+            )
+        }
+
+        const sessionId = req.query?.sessionId as string | undefined
+        if (!sessionId) {
+            throw new InternalFlowiseError(
+                StatusCodes.BAD_REQUEST,
+                'Error: executionsController.getPublicExecutionStatus - sessionId not provided!'
+            )
+        }
+
+        const appServer = getRunningExpressApp()
+        const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({ id: req.params.id })
+        if (!chatflow) {
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${req.params.id} not found`)
+        }
+
+        let chatbotConfig: Record<string, any> = {}
+        if (chatflow.chatbotConfig) {
+            try {
+                chatbotConfig = typeof chatflow.chatbotConfig === 'string' ? JSON.parse(chatflow.chatbotConfig) : chatflow.chatbotConfig
+            } catch (error) {
+                throw new InternalFlowiseError(
+                    StatusCodes.INTERNAL_SERVER_ERROR,
+                    `Error parsing Chatbot Config for Chatflow ${req.params.id}`
+                )
+            }
+        }
+
+        if (chatbotConfig?.chatHistory?.enabled === false) {
+            throw new InternalFlowiseError(StatusCodes.FORBIDDEN, 'Chat history is not enabled')
+        }
+
+        let isDomainAllowed = true
+        let unauthorizedOriginError = chatbotConfig.allowedOriginsError || 'This site is not allowed to access this chatbot'
+        const isValidAllowedOrigins = chatbotConfig.allowedOrigins?.length && chatbotConfig.allowedOrigins[0] !== ''
+        if (isValidAllowedOrigins && req.headers.origin) {
+            const originHeader = req.headers.origin
+            const origin = new URL(originHeader).host
+            isDomainAllowed =
+                chatbotConfig.allowedOrigins.filter((domain: string) => {
+                    try {
+                        const allowedOrigin = new URL(domain).host
+                        return origin === allowedOrigin
+                    } catch (e) {
+                        return false
+                    }
+                }).length > 0
+        }
+
+        if (!isDomainAllowed) {
+            throw new InternalFlowiseError(StatusCodes.FORBIDDEN, unauthorizedOriginError)
+        }
+
+        const executionStatus = await executionsService.getPublicExecutionStatus(req.params.id, sessionId)
+        return res.json(executionStatus)
     } catch (error) {
         next(error)
     }
@@ -117,5 +188,6 @@ export default {
     deleteExecutions,
     getExecutionById,
     getPublicExecutionById,
+    getPublicExecutionStatus,
     updateExecution
 }

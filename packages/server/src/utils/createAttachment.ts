@@ -12,7 +12,7 @@ import {
     isPathTraversal
 } from 'flowise-components'
 import { getRunningExpressApp } from './getRunningExpressApp'
-import { validateFileMimeTypeAndExtensionMatch } from './fileValidation'
+import { normalizeAttachmentUploadMimeType, validateFileMimeTypeAndExtensionMatch } from './fileValidation'
 import logger from './logger'
 import { getErrorMessage } from '../errors/utils'
 import { checkStorage, updateStorageUsage } from './quotaUsage'
@@ -129,34 +129,36 @@ export const createFileAttachment = async (req: Request) => {
     if (files.length) {
         const isBase64 = req.body.base64
         for (const file of files) {
+            // Address file name with special characters: https://github.com/expressjs/multer/issues/1104
+            file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
+            const normalizedMimeType = normalizeAttachmentUploadMimeType(file.originalname, file.mimetype)
+
             if (!allowedFileTypes.length) {
                 throw new InternalFlowiseError(
                     StatusCodes.BAD_REQUEST,
-                    `File type '${file.mimetype}' is not allowed. Allowed types: ${allowedFileTypes.join(', ')}`
+                    `File type '${normalizedMimeType}' is not allowed. Allowed types: ${allowedFileTypes.join(', ')}`
                 )
             }
 
             // Validate file type against allowed types
-            if (allowedFileTypes.length > 0 && !allowedFileTypes.includes(file.mimetype)) {
+            if (allowedFileTypes.length > 0 && !allowedFileTypes.includes(normalizedMimeType)) {
                 throw new InternalFlowiseError(
                     StatusCodes.BAD_REQUEST,
-                    `File type '${file.mimetype}' is not allowed. Allowed types: ${allowedFileTypes.join(', ')}`
+                    `File type '${normalizedMimeType}' is not allowed. Allowed types: ${allowedFileTypes.join(', ')}`
                 )
             }
 
             // Security fix: Verify file extension matches the declared MIME type
             // This prevents MIME type spoofing attacks (e.g., uploading .js file with text/plain MIME type)
             // This addresses the vulnerability (CVE-2025-61687)
-            validateFileMimeTypeAndExtensionMatch(file.originalname, file.mimetype)
+            validateFileMimeTypeAndExtensionMatch(file.originalname, normalizedMimeType)
 
             await checkStorage(orgId, subscriptionId, appServer.usageCacheManager)
 
             const fileBuffer = await getFileFromUpload(file.path ?? file.key)
             const fileNames: string[] = []
-            // Address file name with special characters: https://github.com/expressjs/multer/issues/1104
-            file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
             const { path: storagePath, totalSize } = await addArrayFilesToStorage(
-                file.mimetype,
+                normalizedMimeType,
                 fileBuffer,
                 file.originalname,
                 fileNames,
@@ -166,7 +168,7 @@ export const createFileAttachment = async (req: Request) => {
             )
             await updateStorageUsage(orgId, workspaceId, totalSize, appServer.usageCacheManager)
 
-            const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
+            const fileInputFieldFromMimeType = mapMimeTypeToInputField(normalizedMimeType)
 
             const fileExtension = path.extname(file.originalname)
 
@@ -210,7 +212,7 @@ export const createFileAttachment = async (req: Request) => {
 
                 fileAttachments.push({
                     name: file.originalname,
-                    mimeType: file.mimetype,
+                    mimeType: normalizedMimeType,
                     size: file.size,
                     content
                 })
@@ -232,7 +234,7 @@ export const createFileAttachment = async (req: Request) => {
                         )
                     }
                 }
-                throw new Error(`Failed createFileAttachment: ${file.originalname} (${file.mimetype} - ${getErrorMessage(error)}`)
+                throw new Error(`Failed createFileAttachment: ${file.originalname} (${normalizedMimeType} - ${getErrorMessage(error)}`)
             }
         }
     }

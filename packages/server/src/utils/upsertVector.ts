@@ -35,7 +35,7 @@ import {
 import { getRunningExpressApp } from '../utils/getRunningExpressApp'
 import logger from '../utils/logger'
 import { OMIT_QUEUE_JOB_DATA } from './constants'
-import { validateFileMimeTypeAndExtensionMatch } from './fileValidation'
+import { normalizeAttachmentUploadMimeType, validateFileMimeTypeAndExtensionMatch } from './fileValidation'
 import { checkStorage, updateStorageUsage } from './quotaUsage'
 import { validateFlowAPIKey } from './validateKey'
 
@@ -71,12 +71,13 @@ export const executeUpsert = async ({
             const fileBuffer = await getFileFromUpload(file.path ?? file.key)
             // Address file name with special characters: https://github.com/expressjs/multer/issues/1104
             file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
+            const normalizedMimeType = normalizeAttachmentUploadMimeType(file.originalname, file.mimetype)
 
             // Validate file extension, MIME type, and content to prevent security vulnerabilities
-            validateFileMimeTypeAndExtensionMatch(file.originalname, file.mimetype)
+            validateFileMimeTypeAndExtensionMatch(file.originalname, normalizedMimeType)
 
             const { path: storagePath, totalSize } = await addArrayFilesToStorage(
-                file.mimetype,
+                normalizedMimeType,
                 fileBuffer,
                 file.originalname,
                 fileNames,
@@ -85,7 +86,7 @@ export const executeUpsert = async ({
             )
             await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
 
-            const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
+            const fileInputFieldFromMimeType = mapMimeTypeToInputField(normalizedMimeType)
 
             const fileExtension = path.extname(file.originalname)
 

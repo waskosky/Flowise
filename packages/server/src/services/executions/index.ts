@@ -21,6 +21,37 @@ export interface ExecutionFilters {
     workspaceId?: string
 }
 
+export interface PublicExecutionStatusResponse {
+    chatflowId: string
+    sessionId: string
+    chatId: string
+    executionId: string | null
+    status: ExecutionState | 'ACCEPTED'
+    updatedDate: Date | null
+    error: string | null
+}
+
+const extractExecutionError = (executionData: unknown): string | null => {
+    if (!Array.isArray(executionData)) {
+        return null
+    }
+
+    for (let index = executionData.length - 1; index >= 0; index -= 1) {
+        const entry: any = executionData[index]
+        if (typeof entry?.error === 'string' && entry.error) {
+            return entry.error
+        }
+        if (typeof entry?.data?.error === 'string' && entry.data.error) {
+            return entry.data.error
+        }
+        if (typeof entry?.data?.output?.error === 'string' && entry.data.output.error) {
+            return entry.data.output.error
+        }
+    }
+
+    return null
+}
+
 const getExecutionById = async (executionId: string, workspaceId?: string): Promise<Execution | null> => {
     try {
         const appServer = getRunningExpressApp()
@@ -59,6 +90,58 @@ const getPublicExecutionById = async (executionId: string): Promise<Execution | 
         throw new InternalFlowiseError(
             StatusCodes.INTERNAL_SERVER_ERROR,
             `Error: executionsService.getPublicExecutionById - ${getErrorMessage(error)}`
+        )
+    }
+}
+
+const getPublicExecutionStatus = async (chatflowId: string, sessionId: string): Promise<PublicExecutionStatusResponse> => {
+    try {
+        const appServer = getRunningExpressApp()
+        const executionRepository = appServer.AppDataSource.getRepository(Execution)
+        const execution = await executionRepository.findOne({
+            where: {
+                agentflowId: chatflowId,
+                sessionId
+            },
+            order: {
+                updatedDate: 'DESC'
+            }
+        })
+
+        if (!execution) {
+            return {
+                chatflowId,
+                sessionId,
+                chatId: sessionId,
+                executionId: null,
+                status: 'ACCEPTED',
+                updatedDate: null,
+                error: null
+            }
+        }
+
+        let parsedExecutionData: unknown = execution.executionData
+        if (typeof parsedExecutionData === 'string') {
+            try {
+                parsedExecutionData = JSON.parse(parsedExecutionData)
+            } catch (error) {
+                parsedExecutionData = null
+            }
+        }
+
+        return {
+            chatflowId,
+            sessionId,
+            chatId: sessionId,
+            executionId: execution.id,
+            status: execution.state,
+            updatedDate: execution.updatedDate ?? null,
+            error: extractExecutionError(parsedExecutionData)
+        }
+    } catch (error) {
+        throw new InternalFlowiseError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            `Error: executionsService.getPublicExecutionStatus - ${getErrorMessage(error)}`
         )
     }
 }
@@ -168,5 +251,6 @@ export default {
     getAllExecutions,
     deleteExecutions,
     getPublicExecutionById,
+    getPublicExecutionStatus,
     updateExecution
 }

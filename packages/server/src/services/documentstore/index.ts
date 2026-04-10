@@ -46,7 +46,7 @@ import { UpsertHistory } from '../../database/entities/UpsertHistory'
 import { getWorkspaceSearchOptions } from '../../enterprise/utils/ControllerServiceUtils'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
-import { validateFileMimeTypeAndExtensionMatch } from '../../utils/fileValidation'
+import { normalizeAttachmentUploadMimeType, validateFileMimeTypeAndExtensionMatch } from '../../utils/fileValidation'
 import { databaseEntities, getAppVersion, saveUpsertFlowData } from '../../utils'
 import { DOCUMENT_STORE_BASE_FOLDER, INPUT_PARAMS_TYPE, OMIT_QUEUE_JOB_DATA } from '../../utils/constants'
 import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
@@ -1827,14 +1827,15 @@ const upsertDocStore = async (
             const fileBuffer = await getFileFromUpload(file.path ?? file.key)
             // Address file name with special characters: https://github.com/expressjs/multer/issues/1104
             file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
+            const normalizedMimeType = normalizeAttachmentUploadMimeType(file.originalname, file.mimetype)
 
             // Validate file extension, MIME type, and content to prevent security vulnerabilities
-            validateFileMimeTypeAndExtensionMatch(file.originalname, file.mimetype)
+            validateFileMimeTypeAndExtensionMatch(file.originalname, normalizedMimeType)
 
             try {
                 checkStorage(orgId, subscriptionId, usageCacheManager)
                 const { totalSize } = await addArrayFilesToStorage(
-                    file.mimetype,
+                    normalizedMimeType,
                     fileBuffer,
                     file.originalname,
                     fileNames,
@@ -1847,10 +1848,10 @@ const upsertDocStore = async (
                 continue
             }
 
-            const mimePrefix = 'data:' + file.mimetype + ';base64'
+            const mimePrefix = 'data:' + normalizedMimeType + ';base64'
             const storagePath = mimePrefix + ',' + fileBuffer.toString('base64') + `,filename:${file.originalname}`
 
-            const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
+            const fileInputFieldFromMimeType = mapMimeTypeToInputField(normalizedMimeType)
 
             const fileExtension = path.extname(file.originalname)
 
