@@ -33,6 +33,7 @@ import {
     updateFlowState
 } from '../utils'
 import { convertMultiOptionsToStringArray, processTemplateVariables, configureStructuredOutput } from '../../../src/utils'
+import { injectUploadAdImageToolArgs } from '../uploadAdImageToolArgs'
 
 interface ITool {
     agentSelectedTool: string
@@ -2101,8 +2102,17 @@ class Agent_Agentflow implements INode {
                 }
 
                 try {
+                    const toolArgs = await injectUploadAdImageToolArgs({
+                        toolName: toolCall.name,
+                        toolArgs: toolCall.args,
+                        uploads: options.uploads,
+                        orgId: options.orgId,
+                        chatflowId: options.chatflowid,
+                        chatId: options.chatId
+                    })
+
                     //@ts-ignore
-                    let toolOutput = await selectedTool.call(toolCall.args, { signal: abortController?.signal }, undefined, flowConfig)
+                    let toolOutput = await selectedTool.call(toolArgs, { signal: abortController?.signal }, undefined, flowConfig)
 
                     if (options.analyticHandlers && toolIds) {
                         await options.analyticHandlers.onToolEnd(toolIds, toolOutput)
@@ -2429,8 +2439,17 @@ class Agent_Agentflow implements INode {
                     }
 
                     try {
+                        const toolArgs = await injectUploadAdImageToolArgs({
+                            toolName: toolCall.name,
+                            toolArgs: toolCall.args,
+                            uploads: options.uploads,
+                            orgId: options.orgId,
+                            chatflowId: options.chatflowid,
+                            chatId: options.chatId
+                        })
+
                         //@ts-ignore
-                        let toolOutput = await selectedTool.call(toolCall.args, { signal: abortController?.signal }, undefined, flowConfig)
+                        let toolOutput = await selectedTool.call(toolArgs, { signal: abortController?.signal }, undefined, flowConfig)
 
                         if (options.analyticHandlers && toolIds) {
                             await options.analyticHandlers.onToolEnd(toolIds, toolOutput)

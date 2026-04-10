@@ -6,6 +6,18 @@ import { z } from 'zod'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 
+export const augmentMCPToolDescription = (name: string, description: string): string => {
+    if (name !== 'upload_ad_image') {
+        return description
+    }
+
+    if (description.includes('chat-uploaded image')) {
+        return description
+    }
+
+    return `${description}\n\nFlowise runtime note: if the user uploaded a chat-uploaded image in this conversation, you may call this tool without supplying file or image_url and the runtime will automatically inject the latest uploaded image.`
+}
+
 export class MCPToolkit extends BaseToolkit {
     tools: Tool[] = []
     _tools: ListToolsResult | null = null
@@ -150,7 +162,7 @@ export async function MCPTool({
         },
         {
             name: name,
-            description: description,
+            description: augmentMCPToolDescription(name, description),
             schema: argsSchema
         }
     )
@@ -159,7 +171,7 @@ export async function MCPTool({
 function createSchemaModel(
     inputSchema: {
         type: 'object'
-        properties?: import('zod').objectOutputType<{}, import('zod').ZodTypeAny, 'passthrough'> | undefined
+        properties?: Record<string, unknown> | undefined
     } & { [k: string]: unknown }
 ): any {
     if (inputSchema.type !== 'object' || !inputSchema.properties) {

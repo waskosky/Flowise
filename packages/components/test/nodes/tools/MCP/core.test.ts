@@ -1,4 +1,5 @@
 import {
+    augmentMCPToolDescription,
     validateCommandFlags,
     validateCommandInjection,
     validateArgsForLocalFileAccess,
@@ -402,5 +403,17 @@ describe('MCP Security Validations', () => {
                 })
             }).not.toThrow()
         })
+    })
+})
+
+describe('MCP tool description augmentation', () => {
+    it('adds chat upload guidance to upload_ad_image', () => {
+        expect(augmentMCPToolDescription('upload_ad_image', 'Upload an image to Meta Ads')).toContain(
+            'chat-uploaded image'
+        )
+    })
+
+    it('leaves unrelated tool descriptions unchanged', () => {
+        expect(augmentMCPToolDescription('get_campaigns', 'Get campaigns')).toBe('Get campaigns')
     })
 })
